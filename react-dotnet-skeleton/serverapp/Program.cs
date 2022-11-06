@@ -1,13 +1,53 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using server_app.Services;
+using serverapp.Models.Data;
+using serverapp.Models.EDM;
+
 var builder = WebApplication.CreateBuilder(args);
 
 string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 // Add services to the container.
 
+builder.Services.AddDbContext<ApplicationDbContext>(opt =>
+{
+    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+} );
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(
+    options => {
+                options.SignIn.RequireConfirmedAccount = false;
+                }
+    )
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
+
+//for jwt token
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["TokenKey"]));
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opt =>
+    {
+        opt.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = key,
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
+builder.Services.AddScoped<TokenService>();
+//--------------------------------------------------------------------------------------
 
 
 
@@ -30,9 +70,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
 app.UseCors(MyAllowSpecificOrigins);   // Add For CORS
+
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.MapControllers();
 

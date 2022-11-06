@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import api from './api';
 
 interface Forecast {
   date: Date;
@@ -18,8 +19,9 @@ export const WeatherForecast = () => {
     }, []);
   
     const populateWeatherData = async () => {
-        const response = await fetch('https://localhost:5001/weatherforecast');
-        const data = await response.json();
+
+        const data = await api.WeatherForecast.index();
+        
         setForecast(data);
         setLoading(false);
     };
